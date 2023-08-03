@@ -1,0 +1,122 @@
+'''
+The code you provided defines a Python class called IncomeStatement. This class represents an income statement, which is a financial statement that shows a company's revenues and expenses during a specific period. The class has methods to calculate various line items of the income statement based on certain assumptions and historical data.
+
+Here's a summary of the class methods:
+
+__init__(self, assumptions, historical_data): This is the constructor method that initializes the IncomeStatement object with two parameters: assumptions and historical_data.
+
+calculate_revenue(self): This method calculates projected revenues for the next five years based on the assumed revenue growth rate.
+
+calculate_cogs(self): This method calculates the projected Cost of Goods Sold (COGS) for the next five years based on the assumption of COGS as a percentage of revenue.
+
+calculate_gross_profit(self): This method calculates the projected gross profit for the next five years by subtracting COGS from revenues.
+
+calculate_sga_expenses(self): This method calculates the projected Selling, General, and Administrative (SG&A) expenses for the next five years based on the assumption of SG&A as a percentage of sales.
+
+calculate_operating_income(self): This method calculates the projected operating income for the next five years by subtracting SG&A expenses from gross profit.
+
+calculate_interest_expense(self): This method calculates the projected interest expense for the next five years based on the assumption of LIBOR (London Interbank Offered Rate) and the company's net debt.
+
+calculate_net_income(self): This method calculates the projected net income for the next five years by considering operating income, interest expense, other income/expense, and taxes.
+
+calculate_all_line_items(self): This method calculates all the line items (revenue, COGS, gross profit, SG&A expenses, operating income, interest expense, and net income) for the next five years by calling the individual calculation methods.
+
+It's worth mentioning that this code relies on a pandas DataFrame for storing and manipulating the data. The assumptions and historical data are passed to the class as dictionaries or DataFrames. The calculations are performed using pandas operations, and the results are returned as DataFrames with the respective line items and corresponding years.
+'''
+
+
+class IncomeStatement:
+    def __init__(self, assumptions, historical_data):
+        self.assumptions = assumptions
+        self.historical_data = historical_data
+
+    def calculate_revenue(self):
+        # Calculate revenue based on the revenue growth rate
+        revenue_growth = self.assumptions["Revenue Growth Rate"]
+        last_year_revenue = self.historical_data["Revenue"].iloc[-1]
+        projected_years = [self.historical_data["Year"].iloc[-1] + i for i in range(1, 6)]
+        projected_revenue = [last_year_revenue * (1 + revenue_growth) ** i for i in range(1, 6)]
+
+        return pd.DataFrame({
+            "Year": projected_years,
+            "Revenue": projected_revenue
+        })
+
+    def calculate_cogs(self):
+        # Calculate COGS based on the COGS as % of Revenue assumption
+        projected_cogs = [self.calculate_revenue()["Revenue"].iloc[i] * self.assumptions["COGS as % of Revenue"] for i in range(5)]
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "Cost of Goods Sold (COGS)": projected_cogs
+        })
+
+    def calculate_gross_profit(self):
+        revenue = self.calculate_revenue()["Revenue"]
+        cogs = self.calculate_cogs()["Cost of Goods Sold (COGS)"]
+        gross_profit = revenue - cogs
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "Gross Profit": gross_profit
+        })
+
+    def calculate_sga_expenses(self):
+        revenue = self.calculate_revenue()["Revenue"]
+        sga_expenses = revenue * self.assumptions["SG&A as % of Sales"]
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "SG&A Expenses": sga_expenses
+        })
+
+    def calculate_operating_income(self):
+        gross_profit = self.calculate_gross_profit()["Gross Profit"]
+        sga_expenses = self.calculate_sga_expenses()["SG&A Expenses"]
+        operating_income = gross_profit - sga_expenses
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "Operating Income": operating_income
+        })
+
+    def calculate_interest_expense(self):
+        net_debt = self.historical_data["Total Liabilities"] - self.historical_data["Cash"]
+        interest_expense = net_debt * self.assumptions["LIBOR"]
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "Interest Expense": interest_expense
+        })
+
+    def calculate_net_income(self):
+        operating_income = self.calculate_operating_income()["Operating Income"]
+        interest_expense = self.calculate_interest_expense()["Interest Expense"]
+        other_income_expense = self.historical_data["Other Income / (Expense)"].iloc[-1]
+        taxes = (operating_income - interest_expense + other_income_expense) * self.assumptions["Tax Rate"]
+        net_income = operating_income - interest_expense + other_income_expense - taxes
+
+        return pd.DataFrame({
+            "Year": self.calculate_revenue()["Year"],
+            "Net Income": net_income
+        })
+
+    def calculate_all_line_items(self):
+        projected_revenue = self.calculate_revenue()
+        projected_cogs = self.calculate_cogs()
+        projected_gross_profit = self.calculate_gross_profit()
+        projected_sga_expenses = self.calculate_sga_expenses()
+        projected_operating_income = self.calculate_operating_income()
+        projected_interest_expense = self.calculate_interest_expense()
+        projected_net_income = self.calculate_net_income()
+
+        return pd.DataFrame({
+            "Year": projected_revenue["Year"],
+            "Revenue": projected_revenue["Revenue"],
+            "Cost of Goods Sold (COGS)": projected_cogs["Cost of Goods Sold (COGS)"],
+            "Gross Profit": projected_gross_profit["Gross Profit"],
+            "SG&A Expenses": projected_sga_expenses["SG&A Expenses"],
+            "Operating Income": projected_operating_income["Operating Income"],
+            "Interest Expense": projected_interest_expense["Interest Expense"],
+            "Net Income": projected_net_income["Net Income"]
+        })
