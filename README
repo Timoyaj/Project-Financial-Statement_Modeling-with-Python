@@ -1,4 +1,4 @@
-#Financial Statement Projection
+# Financial Statement Projection
 This repository contains Python code for projecting financial statements, including Income Statement, Balance Sheet, and Cash Flow, based on a set of given assumptions and historical data.
 
 ## Introduction
