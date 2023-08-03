@@ -1,5 +1,5 @@
-# Financial Statement Projection
-This repository contains Python code for projecting financial statements, including Income Statement, Balance Sheet, and Cash Flow, based on a set of given assumptions and historical data.
+  # Financial Statement Projection
+This repository contains Python code for projecting financial statements, including Income Statements, Balance Sheets, and Cash Flow, based on a set of given assumptions and historical data.
 
 ## Introduction
 Financial projections are essential for businesses to plan and make informed decisions about their future. This project aims to provide a tool that calculates projected financial statements for a company based on various financial assumptions.
@@ -7,8 +7,8 @@ Financial projections are essential for businesses to plan and make informed dec
 ## Requirements
 To run the code, you need the following:
 
-Python 3.9 above
-Pandas library
+- Python 3.9 and above
+- Pandas library
 Install Pandas using:
 
 ``` {bash}
@@ -16,19 +16,16 @@ pip install pandas
 ```
 ## Usage
 Clone the repository to your local machine.
-
 Ensure you have the required assumptions and historical data in a format compatible with the code's input.
+Modify the assumptions and historical_data dictionaries in the .py files with your specific data.
 
-Modify the assumptions and historical_data dictionaries in the main.py file with your specific data.
-
-** Run the main.py script:**
-
-
+*Run the .py script:**
 The script will calculate the projected financial statements and display the results on the terminal.
-Structure
+
+## Structure
 The repository contains the following files:
 
-The IncomeStatement_and_BalanceSheet_model: The main jupyter Notebook that utilizes the IncomeStatement, BalanceSheet, and CashFlow classes to calculate projected financial statements.
+The IncomeStatement_and_BalanceSheet_model: The main Jupyter Notebook that utilizes the IncomeStatement, BalanceSheet, and CashFlow classes to calculate projected financial statements.
 Icome_statements.py, Balance_sheet_class.py, and the Cash_flow_class.py: This file contains the IncomeStatement, BalanceSheet, and CashFlow classes, which handle the calculation of individual line items for the respective financial statements.
 Assumption_and_historical_data.txt: This file contains sample data for assumptions and historical data used for testing the code.
 
