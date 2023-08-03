@@ -41,7 +41,7 @@ This project is licensed under the MIT License. See the LICENSE file for details
 ## Disclaimer
 This code is for educational and demonstration purposes only. It should not be used for making critical financial decisions. Always consult with financial experts and professionals when making important business decisions.
 
-Happy projecting! If you have any questions or need assistance, feel free to contact the repository owner or open an issue. We hope this tool helps you with your financial planning!
+*Happy projecting!* If you have any questions or need assistance, feel free to contact the repository owner or open an issue. We hope this tool helps you with your financial planning!
 
 
 
