@@ -1,0 +1,397 @@
+import pandas as pd
+income_statement_items= ['Year', 'Revenue', '% Growth', 'Cost of Goods Sold (COGS)',
+       'COGS as % of Revenue', 'Gross Profit', 'Gross Profit Margin %',
+       'Depreciation', 'Amortization', 'SG&A Expenses', 'SG&A as % of Revenue',
+       'Operating Income / EBIT', 'Operating Income / EBIT Margin %', 'EBITDA',
+       'EBITDA Margin %', 'EBITDA Growth', 'Interest Expense',
+       'Interest Income', 'Net Interest Expense', 'Other Income / (Expense)',
+       'Pretax Income', 'Taxes', 'Tax Rate', 'Net Income', 'Net Margin %',
+       'Net Income Growth']
+
+balance_sheet_items=['Cash', 'Accounts Receivable', 'Inventory',
+       'Other Current Assets', 'Total Current Assets', 'Gross PP&E',
+       'Accumulated Depreciation', 'Net PP&E', 'Other Assets', 'Goodwill',
+       'Total Assets', 'Accounts Payable', 'Accrued Liabilities',
+       'Other Current Liabilities', 'Total Current Liabilities',
+       'Revolving Credit Facility', 'Term Loan', 'Unsecured Debt',
+       'Other Liabilities', 'Total Liabilities', 'Retained Earnings',
+       'Common Stock', 'Total Shareholders Equity',
+       'Total Liabilities and Equity']
+
+cash_flow_items=['Depreciation and Amortization',
+       'Change in Other Liabilities', 'Cash Flow from Operations',
+       'Capital Expenditures', 'Asset Dispositions',
+       'Cash Flow from Investing', 'Change in Unsecured Debt',
+       'Cash Flow from Financing', 'Net Cash Flow', 'Beginning Cash Position',
+       'Change in Cash Position', 'Ending Cash Position',
+       'Cash Flow Before Revolver', 'Beginning Revolver Balance',
+       '(Paydown) / Drawdown', 'Ending Revolver Balance', 'Interest Rate',
+       'Term Loan Beginning Balance', 'Term Loan Ending Balance',
+       'Unsecured Debt Beginning Balance', 'Unsecured Debt Ending Balance',
+       'Total Interest Expense', 'Interest Earned on Cash']
+
+
+       #####income statement
+
+import pandas as pd
+
+def forecast_income_statement(assumptions, historical_data, years_to_forecast):
+    income_statement_items = ['Year', 'Revenue', '% Growth', 'Cost of Goods Sold (COGS)',
+                              'COGS as % of Revenue', 'Gross Profit', 'Gross Profit Margin %',
+                              'Depreciation', 'Amortization', 'SG&A Expenses', 'SG&A as % of Revenue',
+                              'Operating Income / EBIT', 'Operating Income / EBIT Margin %', 'EBITDA',
+                              'EBITDA Margin %', 'EBITDA Growth', 'Interest Expense',
+                              'Interest Income', 'Net Interest Expense', 'Other Income / (Expense)',
+                              'Pretax Income', 'Taxes', 'Tax Rate', 'Net Income', 'Net Margin %',
+                              'Net Income Growth']
+
+    # Initialize lists to store forecasted values
+    forecasted_values = {item: [] for item in income_statement_items}
+
+    # Copy historical data to forecasted data
+    for item in income_statement_items:
+        forecasted_values[item] = historical_data[item].tolist()
+
+    # Calculate and forecast the income statement items for the specified number of years
+    for year in range(historical_data['Year'].max() + 1, historical_data['Year'].max() + 1 + years_to_forecast):
+        prev_year = year - 1
+
+        # Revenue forecast
+        revenue_growth_rate = assumptions['Revenue Growth Rate']
+        forecasted_values['% Growth'].append(revenue_growth_rate)
+        forecasted_values['Revenue'].append(forecasted_values['Revenue'][prev_year] * (1 + revenue_growth_rate))
+
+        # Cost of Goods Sold (COGS) forecast
+        cogs_as_percent_of_revenue = assumptions['COGS as % of Revenue']
+        forecasted_values['COGS as % of Revenue'].append(cogs_as_percent_of_revenue)
+        forecasted_values['Cost of Goods Sold (COGS)'].append(forecasted_values['Revenue'][year] * cogs_as_percent_of_revenue)
+
+        # Gross Profit forecast
+        forecasted_values['Gross Profit'].append(forecasted_values['Revenue'][year] - forecasted_values['Cost of Goods Sold (COGS)'][year])
+
+        # Gross Profit Margin % forecast
+        forecasted_values['Gross Profit Margin %'].append(forecasted_values['Gross Profit'][year] / forecasted_values['Revenue'][year])
+
+        # Operating Income / EBIT forecast
+        sga_as_percent_of_revenue = assumptions['SG&A as % of Sales']
+        forecasted_values['SG&A as % of Revenue'].append(sga_as_percent_of_revenue)
+        forecasted_values['SG&A Expenses'].append(forecasted_values['Revenue'][year] * sga_as_percent_of_revenue)
+        forecasted_values['Operating Income / EBIT'].append(forecasted_values['Gross Profit'][year] - forecasted_values['SG&A Expenses'][year])
+
+        # Operating Income / EBIT Margin % forecast
+        forecasted_values['Operating Income / EBIT Margin %'].append(forecasted_values['Operating Income / EBIT'][year] / forecasted_values['Revenue'][year])
+
+        # EBITDA forecast
+        depreciation_as_percent_of_gross_ppe = assumptions['Depreciation as % of Gross PP&E']
+        forecasted_values['Depreciation'].append(forecasted_values['Gross PP&E'][year] * depreciation_as_percent_of_gross_ppe)
+        forecasted_values['EBITDA'].append(forecasted_values['Operating Income / EBIT'][year] + forecasted_values['Depreciation'][year])
+
+        # EBITDA Margin % forecast
+        forecasted_values['EBITDA Margin %'].append(forecasted_values['EBITDA'][year] / forecasted_values['Revenue'][year])
+
+        # EBITDA Growth forecast
+        prev_year_ebitda = forecasted_values['EBITDA'][prev_year]
+        forecasted_values['EBITDA Growth'].append((forecasted_values['EBITDA'][year] - prev_year_ebitda) / prev_year_ebitda)
+
+        # Interest Expense forecast
+        interest_rate = assumptions['LIBOR'] + (0.0025 * (year - historical_data['Year'].max() - 1))  # Increase 25 basis points (0.25%) every year after the first year
+        forecasted_values['Interest Expense'].append(forecasted_values['Revolver'][year] * interest_rate)
+
+        # Net Interest Expense forecast
+        forecasted_values['Net Interest Expense'].append(forecasted_values['Interest Expense'][year] - forecasted_values['Interest Income'][year])
+
+        # Pretax Income forecast
+        forecasted_values['Pretax Income'].append(forecasted_values['EBITDA'][year] - forecasted_values['Net Interest Expense'][year])
+
+        # Taxes forecast
+        tax_rate = assumptions['Tax Rate']
+        forecasted_values['Tax Rate'].append(tax_rate)
+        forecasted_values['Taxes'].append(forecasted_values['Pretax Income'][year] * tax_rate)
+
+        # Net Income forecast
+        forecasted_values['Net Income'].append(forecasted_values['Pretax Income'][year] - forecasted_values['Taxes'][year])
+
+        # Net Margin % forecast
+        forecasted_values['Net Margin %'].append(forecasted_values['Net Income'][year] / forecasted_values['Revenue'][year])
+
+        # Net Income Growth forecast
+        prev_year_net_income = forecasted_values['Net Income'][prev_year]
+        forecasted_values['Net Income Growth'].append((forecasted_values['Net Income'][year] - prev_year_net_income) / prev_year_net_income)
+
+    # Create a forecasted DataFrame
+    forecasted_df = pd.DataFrame(forecasted_values)
+    return forecasted_df
+
+# Number of years to forecast
+years_to_forecast = 5
+
+# Call the function to forecast the income statement items
+forecasted_income_statement = forecast_income_statement(assumptions, historical_data, years_to_forecast)
+
+# Display the forecasted income statement
+print(forecasted_income_statement)
+
+
+
+# With these modifications, the function now takes into account the increasing LIBOR rate, Interest Earned on Cash, Revolver Interest Rate, Term Loan Interest Rate, and Unsecured Debt Interest Rate over the forecasted years. The forecasted income statement will reflect the impact of these changes on the financials.
+
+#=========== balance sheet====
+
+def forecast_balance_sheet(assumptions, historical_data, years_to_forecast):
+    balance_sheet_items = ['Year', 'Cash', 'Accounts Receivable', 'Inventory',
+                           'Other Current Assets', 'Total Current Assets', 'Gross PP&E',
+                           'Accumulated Depreciation', 'Net PP&E', 'Other Assets', 'Goodwill',
+                           'Total Assets', 'Accounts Payable', 'Accrued Liabilities',
+                           'Other Current Liabilities', 'Total Current Liabilities',
+                           'Revolving Credit Facility', 'Term Loan', 'Unsecured Debt',
+                           'Other Liabilities', 'Total Liabilities', 'Retained Earnings',
+                           'Common Stock', 'Total Shareholders Equity',
+                           'Total Liabilities and Equity']
+
+    # Initialize lists to store forecasted values
+    forecasted_values = {item: [] for item in balance_sheet_items}
+
+    # Copy historical data to forecasted data
+    for item in balance_sheet_items:
+        forecasted_values[item] = historical_data[item].tolist()
+
+    # Calculate and forecast the balance sheet items for the specified number of years
+    for year in range(historical_data['Year'].max() + 1, historical_data['Year'].max() + 1 + years_to_forecast):
+        prev_year = year - 1
+
+        # Cash forecast
+        interest_rate_on_cash = assumptions['Interest earned on cash'] + (0.0025 * (year - historical_data['Year'].max() - 1))  # Increase 25 basis points (0.25%) every year after the first year
+        forecasted_values['Cash'].append(forecasted_values['Cash'][prev_year] * (1 + interest_rate_on_cash))
+
+        # Accounts Receivable forecast
+        days_accounts_receivable = assumptions['Days Accounts Receivable']
+        forecasted_values['Accounts Receivable'].append(forecasted_values['Revenue'][year] * (days_accounts_receivable / 365))
+
+        # Inventory forecast
+        days_inventory = assumptions['Days Inventory']
+        forecasted_values['Inventory'].append(forecasted_values['Cost of Goods Sold (COGS)'][year] * (days_inventory / 365))
+
+        # Other Current Assets forecast
+        forecasted_values['Other Current Assets'].append(forecasted_values['Revenue'][year] * assumptions['Other Current Assets'])
+
+        # Total Current Assets forecast
+        forecasted_values['Total Current Assets'].append(
+            forecasted_values['Cash'][year] +
+            forecasted_values['Accounts Receivable'][year] +
+            forecasted_values['Inventory'][year] +
+            forecasted_values['Other Current Assets'][year]
+        )
+
+        # Gross PP&E forecast
+        capex_as_percent_of_sales = assumptions['Capex as % of Sales']
+        forecasted_values['Gross PP&E'].append(forecasted_values['Revenue'][year] * capex_as_percent_of_sales)
+
+        # Accumulated Depreciation forecast
+        term_loan_amortization = assumptions['Term Loan Amortization']
+        forecasted_values['Accumulated Depreciation'].append(forecasted_values['Accumulated Depreciation'][prev_year] + forecasted_values['Depreciation'][year] + term_loan_amortization)
+
+        # Net PP&E forecast
+        forecasted_values['Net PP&E'].append(forecasted_values['Gross PP&E'][year] - forecasted_values['Accumulated Depreciation'][year])
+
+        # Other Assets forecast
+        forecasted_values['Other Assets'].append(forecasted_values['Revenue'][year] * assumptions['Other Assets'])
+
+        # Total Assets forecast
+        forecasted_values['Total Assets'].append(
+            forecasted_values['Total Current Assets'][year] +
+            forecasted_values['Net PP&E'][year] +
+            forecasted_values['Other Assets'][year] +
+            forecasted_values['Goodwill'][year]
+        )
+
+        # Accounts Payable forecast
+        days_payable = assumptions['Days Payable']
+        forecasted_values['Accounts Payable'].append(forecasted_values['Cost of Goods Sold (COGS)'][year] * (days_payable / 365))
+
+        # Accrued Liabilities forecast
+        accrued_liabilities_as_percent_of_cogs = assumptions['Accrued Liabilities as % of COGS']
+        forecasted_values['Accrued Liabilities'].append(forecasted_values['Cost of Goods Sold (COGS)'][year] * accrued_liabilities_as_percent_of_cogs)
+
+        # Other Current Liabilities forecast
+        other_current_liabilities_as_percent_of_cogs = assumptions['Other Current Liabilities as % of COGS']
+        forecasted_values['Other Current Liabilities'].append(forecasted_values['Cost of Goods Sold (COGS)'][year] * other_current_liabilities_as_percent_of_cogs)
+
+        # Total Current Liabilities forecast
+        forecasted_values['Total Current Liabilities'].append(
+            forecasted_values['Accounts Payable'][year] +
+            forecasted_values['Accrued Liabilities'][year] +
+            forecasted_values['Other Current Liabilities'][year]
+        )
+
+        # Revolving Credit Facility forecast
+        forecasted_values['Revolving Credit Facility'].append(forecasted_values['Revolving Credit Facility'][prev_year] + forecasted_values['Revolving Credit Facility'][prev_year] * assumptions['Revolver'])
+
+        # Term Loan forecast
+        forecasted_values['Term Loan'].append(forecasted_values['Term Loan'][prev_year] - term_loan_amortization)
+
+        # Unsecured Debt forecast
+        unsecured_debt_amortization = assumptions['Unsecured Debt Amortization']
+        forecasted_values['Unsecured Debt'].append(forecasted_values['Unsecured Debt'][prev_year] - unsecured_debt_amortization)
+
+        # Other Liabilities forecast
+        forecasted_values['Other Liabilities'].append(forecasted_values['Revenue'][year] * assumptions['Other Liabilities'])
+
+        # Total Liabilities forecast
+        forecasted_values['Total Liabilities'].append(
+            forecasted_values['Total Current Liabilities'][year] +
+            forecasted_values['Revolving Credit Facility'][year] +
+            forecasted_values['Term Loan'][year] +
+            forecasted_values['Unsecured Debt'][year] +
+            forecasted_values['Other Liabilities'][year]
+        )
+
+        # Total Shareholders Equity forecast
+        forecasted_values['Total Shareholders Equity'].append(
+            forecasted_values['Total Assets'][year] - forecasted_values['Total Liabilities'][year]
+        )
+
+        # Total Liabilities and Equity forecast
+        forecasted_values['Total Liabilities and Equity'].append(
+            forecasted_values['Total Liabilities'][year] + forecasted_values['Total Shareholders Equity'][year]
+        )
+
+    # Create a forecasted DataFrame
+    forecasted_df = pd.DataFrame(forecasted_values)
+    return forecasted_df
+
+# Call the function to forecast the balance sheet items
+forecasted_balance_sheet = forecast_balance_sheet(assumptions
+
+
+========= cash flow===================
+
+
+'''
+To calculate and forecast each of the cash flow items using the provided assumptions and historical data, we can create a set of functions. These functions will perform the calculations based on the given assumptions and apply them to forecast future cash flows. Below are the functions for each cash flow item:
+'''
+
+
+
+
+def forecast_cash_flows(assumptions, historical_data, years_to_forecast):
+    cash_flow_items = ['Year', 'Depreciation and Amortization', 'Change in Other Liabilities',
+                       'Cash Flow from Operations', 'Capital Expenditures', 'Asset Dispositions',
+                       'Cash Flow from Investing', 'Change in Unsecured Debt', 'Cash Flow from Financing',
+                       'Net Cash Flow', 'Beginning Cash Position', 'Change in Cash Position',
+                       'Ending Cash Position', 'Cash Flow Before Revolver', 'Beginning Revolver Balance',
+                       '(Paydown) / Drawdown', 'Ending Revolver Balance', 'Interest Rate',
+                       'Term Loan Beginning Balance', 'Term Loan Ending Balance',
+                       'Unsecured Debt Beginning Balance', 'Unsecured Debt Ending Balance',
+                       'Total Interest Expense', 'Interest Earned on Cash']
+
+    # Initialize lists to store forecasted values
+    forecasted_values = {item: [] for item in cash_flow_items}
+
+    # Copy historical data to forecasted data
+    for item in cash_flow_items:
+        forecasted_values[item] = historical_data[item].tolist()
+
+    # Calculate and forecast the cash flow items for the specified number of years
+    for year in range(historical_data['Year'].max() + 1, historical_data['Year'].max() + 1 + years_to_forecast):
+        prev_year = year - 1
+
+        # Depreciation and Amortization forecast
+        forecasted_values['Depreciation and Amortization'].append(forecasted_values['Depreciation'][year])
+
+        # Change in Other Liabilities forecast
+        forecasted_values['Change in Other Liabilities'].append(forecasted_values['Other Liabilities'][year] - forecasted_values['Other Liabilities'][prev_year])
+
+        # Cash Flow from Operations forecast
+        forecasted_values['Cash Flow from Operations'].append(
+            forecasted_values['Net Income'][year] +
+            forecasted_values['Depreciation and Amortization'][year] +
+            forecasted_values['Change in Other Liabilities'][year]
+        )
+
+        # Capital Expenditures forecast
+        capex_as_percent_of_sales = assumptions['Capex as % of Sales']
+        forecasted_values['Capital Expenditures'].append(forecasted_values['Revenue'][year] * capex_as_percent_of_sales * -1)  # Capital expenditures are subtracted as they are cash outflows
+
+        # Asset Dispositions forecast
+        forecasted_values['Asset Dispositions'].append(forecasted_values['Asset Dispositions'][prev_year])
+
+        # Cash Flow from Investing forecast
+        forecasted_values['Cash Flow from Investing'].append(
+            forecasted_values['Capital Expenditures'][year] +
+            forecasted_values['Asset Dispositions'][year]
+        )
+
+        # Change in Unsecured Debt forecast
+        forecasted_values['Change in Unsecured Debt'].append(forecasted_values['Unsecured Debt'][year] - forecasted_values['Unsecured Debt'][prev_year])
+
+        # Cash Flow from Financing forecast
+        forecasted_values['Cash Flow from Financing'].append(
+            forecasted_values['Revolver'][year] +
+            forecasted_values['Term Loan'][year] +
+            forecasted_values['Change in Unsecured Debt'][year]
+        )
+
+        # Net Cash Flow forecast
+        forecasted_values['Net Cash Flow'].append(
+            forecasted_values['Cash Flow from Operations'][year] +
+            forecasted_values['Cash Flow from Investing'][year] +
+            forecasted_values['Cash Flow from Financing'][year]
+        )
+
+        # Beginning Cash Position forecast
+        forecasted_values['Beginning Cash Position'].append(forecasted_values['Ending Cash Position'][prev_year])
+
+        # Change in Cash Position forecast
+        forecasted_values['Change in Cash Position'].append(forecasted_values['Net Cash Flow'][year])
+
+        # Ending Cash Position forecast
+        forecasted_values['Ending Cash Position'].append(forecasted_values['Beginning Cash Position'][year] + forecasted_values['Change in Cash Position'][year])
+
+        # Cash Flow Before Revolver forecast
+        forecasted_values['Cash Flow Before Revolver'].append(forecasted_values['Net Cash Flow'][year] + forecasted_values['Revolver'][year])
+
+        # Beginning Revolver Balance forecast
+        forecasted_values['Beginning Revolver Balance'].append(forecasted_values['Ending Revolver Balance'][prev_year])
+
+        # (Paydown) / Drawdown forecast
+        forecasted_values['(Paydown) / Drawdown'].append(forecasted_values['Revolving Credit Facility'][year] - forecasted_values['Beginning Revolver Balance'][year])
+
+        # Ending Revolver Balance forecast
+        forecasted_values['Ending Revolver Balance'].append(forecasted_values['Beginning Revolver Balance'][year] + forecasted_values['(Paydown) / Drawdown'][year])
+
+        # Interest Rate forecast
+        interest_rate = assumptions['LIBOR'] + (0.0025 * (year - historical_data['Year'].max() - 1))  # Increase 25 basis points (0.25%) every year after the first year
+        forecasted_values['Interest Rate'].append(interest_rate)
+
+        # Term Loan Beginning Balance forecast
+        forecasted_values['Term Loan Beginning Balance'].append(forecasted_values['Term Loan'][prev_year])
+
+        # (Paydown) / Drawdown for Term Loan forecast
+        term_loan_amortization = assumptions['Term Loan Amortization']
+        forecasted_values['(Paydown) / Drawdown'].append(forecasted_values['Term Loan Beginning Balance'][year] - forecasted_values['Term Loan Ending Balance'][year])
+
+        # Term Loan Ending Balance forecast
+        forecasted_values['Term Loan Ending Balance'].append(forecasted_values['Term Loan Beginning Balance'][year] - term_loan_amortization)
+
+        # Unsecured Debt Beginning Balance forecast
+        forecasted_values['Unsecured Debt Beginning Balance'].append(forecasted_values['Unsecured Debt'][prev_year])
+
+        # (Paydown) / Drawdown for Unsecured Debt forecast
+        unsecured_debt_amortization = assumptions['Unsecured Debt Amortization']
+        forecasted_values['(Paydown) / Drawdown'].append(forecasted_values['Unsecured Debt Beginning Balance'][year] - forecasted_values['Unsecured Debt Ending Balance'][year])
+
+        # Unsecured Debt Ending Balance forecast
+        forecasted_values['Unsecured Debt Ending Balance'].append(forecasted_values['Unsecured Debt Beginning Balance'][year] - unsecured_debt_amortization)
+
+        # Total Interest Expense forecast
+        forecasted_values['Total Interest Expense'].append(forecasted_values['Interest Expense'][year] + forecasted_values['Interest Earned on Cash'][year])
+
+    # Create a forecasted DataFrame
+    forecasted_df = pd.DataFrame(forecasted_values)
+    return forecasted_df
+
+'''
+Call the function to forecast the cash flow items
+forecasted_cash_flows = forecast_cash_flows(assumptions, historical_data, 5)
+Please note that the years_to_forecast parameter in the function call specifies the number of years you want to forecast beyond the historical data provided. Adjust this parameter as per your desired forecast horizon. The resulting DataFrame forecasted_cash_flows will contain the forecasted values for each cash flow item for the specified number of years.
+'''
